@@ -1,0 +1,28 @@
+digraph pl1_node_as_cluster {
+  //rankdir=TD;
+  compound=true;
+  ranksep=0.5;
+  //node [style=invis,labelloc=t];
+  //node [color=white,style=filled,labelloc=t];
+  node [shape=plaintext, fontsize=10, label=""];
+  graph [penwidth=0,labelloc="t"];
+  /* Nodes */
+  subgraph cluster_s {
+    label="start";
+    icon_s [image="../../../icons/pipeline_start_node.gif"]; }
+  subgraph cluster_ccv {
+    label="Call-CheckValue";
+    icon_ccv [image="../../../icons/pipeline_call_node.gif"]; }
+  subgraph cluster_cne {
+    label="call/nonempty";
+    icon_cne [image="../../../icons/pipeline_interaction_node.gif"];
+    }
+  subgraph cluster_ce {
+    label="call/empty";
+    icon_ce [image="../../../icons/pipeline_interaction_node.gif"];
+    }
+  //Edges
+  icon_s -> icon_ccv;
+  icon_ccv -> icon_cne [label="nonempty"];
+  icon_ccv -> icon_ce [label="empty"];
+}

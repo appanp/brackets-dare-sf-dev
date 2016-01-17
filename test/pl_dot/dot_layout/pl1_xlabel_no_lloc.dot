@@ -1,0 +1,13 @@
+digraph pl1_xlabel {
+  rankdir=TD;
+  node [label="",shape=plaintext];
+  s [xlabel="start",image="../../../icons/pipeline_start_node.gif"];
+  ccv [xlabel="Call-CheckValue",image="../../../icons/pipeline_call_node.gif"];
+  cne [xlabel="call/nonempty",image="../../../icons/pipeline_interaction_node.gif"];
+  ce [xlabel="call/empty",image="../../../icons/pipeline_interaction_node.gif"];
+
+  //Edges
+  s -> ccv;
+  ccv -> cne [xlabel="nonempty"];
+  ccv -> ce [xlabel="empty"];
+}

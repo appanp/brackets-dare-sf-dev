@@ -1,0 +1,14 @@
+digraph pl1_bottom_plaintext {
+  rankdir=TD;
+  node [color=lightblue,style=filled,shape=plaintext,labelloc=b,height=0.3];
+  s [label="\nstart",image="../../../icons/pipeline_start_node.gif"];
+  ccv [label="\nCall-CheckValue",image="../../../icons/pipeline_call_node.gif"];
+  cne [label="\ncall/nonempty",image="../../../icons/pipeline_interaction_node.gif"];
+  ce [label="\ncall/empty",image="../../../icons/pipeline_interaction_node.gif"];
+
+  //Edges
+  s -> ccv;
+  ccv -> cne [label="nonempty"];
+  ccv -> ce [label="empty"];
+}
+
