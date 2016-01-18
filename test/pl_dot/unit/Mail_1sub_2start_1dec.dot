@@ -1,0 +1,19 @@
+digraph Mail_1sub_2start_1dec {
+    node [shape=plaintext];
+    n1 [label="Send",image="../../../icons/pipeline_start_node_error.gif"];
+    n2 [label="PlaceOrder",image="../../../icons/pipeline_start_node_error.gif"];
+    n3 [label="",image="../../../icons/pipeline_join_node.gif"];
+    n4 [label="!empty(MailFrom) && !empty(MailSubject) &&\n !empty(MailTemplate) && !empty(MailTo)"];
+    n5 [label="SendMail(bc_api)"];
+    n6 [label="",image="../../../icons/pipeline_join_node.gif"];
+    n7 [label="",image="../../../icons/pipeline_end_node.gif"];
+    
+    //Edges
+    n1 -> n3;
+    n2 -> n3;
+    n3 -> n4;
+    n4 -> n5;
+    n5 -> n6;
+    n4 -> n6 [label="error"];
+    n6 -> n7;
+    }

@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<?demandware-pipeline version="2.0"?>
+
+<pipeline group="Checkout" type="view">
+  <branch basename="_ANONYMOUS_BRANCH_1">
+    <segment>
+      <node>
+        <text-node>
+          <description>Creates a gift certificate for each gift certificate line item in the order and sends an email to the gift certificate receiver.</description>
+        </text-node>
+        <node-display x="1" y="0"/>
+      </node>
+    </segment>
+  </branch>
+  <branch basename="_ANONYMOUS_BRANCH_2">
+    <segment>
+      <node>
+        <text-node>
+          <description>This pipeline is responsible to process information supplied by the user during the checkout and saves a used credit card to the customer payment instruments.</description>
+        </text-node>
+        <node-display width="2" x="3" y="0"/>
+      </node>
+    </segment>
+  </branch>
+  <branch basename="CreateGiftCertificates">
+    <segment>
+      <node>
+        <start-node call-mode="private" name="CreateGiftCertificates" secure="false"/>
+        <node-display x="1" y="1"/>
+      </node>
+      <transition target-connector="in" target-path="./+1">
+        <transition-display>
+          <bend-point relative-to="source" x="0" y="1"/>
+        </transition-display>
+      </transition>
+    </segment>
+    <segment>
+      <node>
+        <loop-node element-key="GiftCertificateLineItem" iterator-key="Order.giftCertificateLineItems"/>
+        <node-display x="0" y="1"/>
+        <branch basename="b2" source-connector="do">
+          <transition target-connector="in">
+            <transition-display>
+              <bend-point relative-to="source" x="0" y="1"/>
+            </transition-display>
+          </transition>
+          <segment>
+            <node>
+              <pipelet-node pipelet-name="CreateGiftCertificate" pipelet-set-identifier="bc_api">
+                <key-binding alias="GiftCertificateLineItem.netPrice.value" key="Amount"/>
+                <key-binding alias="GiftCertificateLineItem.recipientEmail" key="RecipientEmail"/>
+                <key-binding alias="GiftCertificate" key="GiftCertificate"/>
+                <key-binding alias="GiftCertificateLineItem.recipientName" key="RecipientName"/>
+                <key-binding alias="GiftCertificateLineItem.senderName" key="SenderName"/>
+                <key-binding alias="GiftCertificateLineItem" key="GiftCertificateLineItem"/>
+                <key-binding alias="GiftCertificateLineItem.message" key="Message"/>
+                <key-binding alias="Order.orderNo" key="OrderNo"/>
+              </pipelet-node>
+              <node-display x="0" y="1"/>
+              <branch basename="b2" source-connector="error">
+                <transition target-connector="in">
+                  <transition-display>
+                    <bend-point relative-to="source" x="1" y="0"/>
+                  </transition-display>
+                </transition>
+                <segment>
+                  <node>
+                    <end-node name="error"/>
+                    <node-display orientation="horizontal" x="1" y="0"/>
+                  </node>
+                </segment>
+              </branch>
+            </node>
+            <simple-transition>
+              <transition-display>
+                <bend-point relative-to="source" x="0" y="1"/>
+              </transition-display>
+            </simple-transition>
+            <node>
+              <pipelet-node pipelet-name="Assign" pipelet-set-identifier="bc_api">
+                <config-property key="Transactional" value="false"/>
+                <key-binding alias="dw.system.Site.getCurrent().getCustomPreferenceValue('customerServiceEmail')" key="From_0"/>
+                <key-binding alias="MailFrom" key="To_0"/>
+                <key-binding alias="dw.web.Resource.msg('resource.ordergcemsg','email',null)+&quot; &quot;+GiftCertificate.senderName" key="From_1"/>
+                <key-binding alias="MailSubject" key="To_1"/>
+                <key-binding alias="&quot;mail/giftcert&quot;" key="From_2"/>
+                <key-binding alias="MailTemplate" key="To_2"/>
+                <key-binding alias="GiftCertificate.recipientEmail" key="From_3"/>
+                <key-binding alias="MailTo" key="To_3"/>
+                <key-binding alias="null" key="From_4"/>
+                <key-binding alias="null" key="To_4"/>
+                <key-binding alias="null" key="From_5"/>
+                <key-binding alias="null" key="To_5"/>
+                <key-binding alias="null" key="From_6"/>
+                <key-binding alias="null" key="To_6"/>
+                <key-binding alias="null" key="From_7"/>
+                <key-binding alias="null" key="To_7"/>
+                <key-binding alias="null" key="From_8"/>
+                <key-binding alias="null" key="To_8"/>
+                <key-binding alias="null" key="From_9"/>
+                <key-binding alias="null" key="To_9"/>
+              </pipelet-node>
+              <node-display x="0" y="1"/>
+            </node>
+            <simple-transition>
+              <transition-display>
+                <bend-point relative-to="source" x="0" y="1"/>
+              </transition-display>
+            </simple-transition>
+            <node>
+              <call-node start-name-ref="Mail-SecureSend"/>
+              <node-display x="0" y="1"/>
+            </node>
+            <transition target-connector="loop" target-path="..">
+              <transition-display>
+                <bend-point relative-to="source" x="-1" y="0"/>
+                <bend-point relative-to="target" x="-1" y="0"/>
+              </transition-display>
+            </transition>
+          </segment>
+        </branch>
+      </node>
+      <simple-transition>
+        <transition-display>
+          <bend-point relative-to="source" x="1" y="0"/>
+        </transition-display>
+      </simple-transition>
+      <node>
+        <end-node/>
+        <node-display orientation="horizontal" x="1" y="0"/>
+      </node>
+    </segment>
+  </branch>
+  <branch basename="ProcessPersonalInformation">
+    <segment>
+      <node>
+        <start-node call-mode="private" name="ProcessPersonalInformation" secure="false"/>
+        <node-display x="3" y="1"/>
+      </node>
+      <simple-transition>
+        <transition-display>
+          <bend-point relative-to="source" x="0" y="1"/>
+        </transition-display>
+      </simple-transition>
+      <node>
+        <call-node start-name-ref="COBilling-SaveCreditCard"/>
+        <node-display x="0" y="1"/>
+        <branch basename="b2" source-connector="error">
+          <transition target-connector="in">
+            <transition-display>
+              <bend-point relative-to="target" x="-1" y="0"/>
+            </transition-display>
+          </transition>
+          <segment>
+            <node>
+              <end-node name="error"/>
+              <node-display orientation="horizontal" x="1" y="1"/>
+            </node>
+          </segment>
+        </branch>
+      </node>
+      <simple-transition>
+        <transition-display>
+          <bend-point relative-to="target" x="0" y="-1"/>
+        </transition-display>
+      </simple-transition>
+      <node>
+        <end-node/>
+        <node-display x="0" y="2"/>
+      </node>
+    </segment>
+  </branch>
+</pipeline>

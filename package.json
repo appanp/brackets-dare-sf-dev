@@ -1,0 +1,24 @@
+{
+    "name": "dwre-sf-dev",
+    "title": "Demandware Store-front development extension",
+    "description": "Adds support for Demandware ISML & Pipeline XML files",
+    "keywords": ["demandware", "pipeline", "ISML", "Template", "syntax", "highlighting", "hilighting"],
+    "categories": ["language"],
+    "homepage": "https://github.com/appanp/brackets-dwre-sf-dev",
+    "author": "Appan Ponnappan <appanponn@gmail.com>",
+    "licenses": [{
+        "type": "Apache 2.0",
+        "url": "http://www.apache.org/licenses/"
+  }],
+    "engines": {
+        "brackets": ">=1.5.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/appanp/brackets-dwre-sf-dev.git"
+    },
+    "version": "0.1.0",
+    "dependencies": {
+        "graphviz": "0.0.8"
+    }
+}

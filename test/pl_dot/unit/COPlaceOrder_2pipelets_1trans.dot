@@ -1,0 +1,15 @@
+digraph COPlaceOrder_Trans {
+    node [shape=plaintext];
+    n1 [label="PlaceOrder",image="../../../icons/pipeline_start_node_error.gif"];
+    n2 [label="PlaceOrder(bc_api)",image="../../../icons/pipeline_pipelet_node.gif"];
+    n3 [label="Script(bc_api)",image="../../../icons/pipeline_pipelet_node.gif"];
+    n4 [label="",image="../../../icons/pipeline_end_node.gif"];
+    n5 [label="error",image="../../../icons/pipeline_end_node.gif"]
+    n6 [label="",image="../../../icons/pipeline_join_node.gif"];
+    //Edges
+    n1 -> n2 [label="trans-begin"];
+    n2 -> n3;
+    n3 -> n4 [label="trans-end"];
+    n2 -> n6 [label="error"];
+    n6 -> n5 [label="trans-rollback"];
+}
