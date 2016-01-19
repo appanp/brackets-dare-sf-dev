@@ -16,6 +16,7 @@ function PlineXformer(filename, options) {
 	this.graph = {};
 	this.plName = '';
 	this.brFirst = true;
+	this.prevDep = 0;
 
 	//Actual transformer
 	this.xform._transform = function (data, encoding, done) {
@@ -38,32 +39,34 @@ function PlineXformer(filename, options) {
 		self.currBrName = el.$.basename;
 		self.segNestedDepth++;
 		console.log("+++ CMP: " + self.segNestedDepth + "," + self.segNestedPath.join('$'));
-		if (self.segNestedDepth != self.segNestedPath.length) {
+		if (self.segNestedDepth == (self.prevDep + 1)) {
 			self.segNestedPath.push(self.currBrName);
 		} else {
-			console.log("... Popping branch: " + self.segNestedPath.pop());
+			//console.log("... Popping branch: " + self.segNestedPath.pop());
 			self.segNestedPath.push(self.currBrName);
 		}
 		console.log("----> Branch: " + self.currBrName);
 	});
 	this.xmlStream.on('startElement: segment', function (el) {
 		//self.xform.write(JSON.stringify(el));
-		self.segNestedDepth++;
 		console.log("+++ CMP: " + self.segNestedDepth + "," + self.segNestedPath.join('$'));
-		if (self.segNestedDepth != self.segNestedPath.length) {
+		if (self.segNestedDepth == (self.prevDep + 1)) {
 			self.segNestedPath.push(1);
 		} else {
-			var oldval = self.segNestedPath.pop();
-			self.segNestedPath.push(++oldval);
+			//var oldval = self.segNestedPath.pop();
+			self.segNestedPath.push(self.prevCnt + 1);
 		}
+		self.segNestedDepth++;
 		console.log("Seg: " + self.segNestedPath.join('.'));
 	});
 	this.xmlStream.on('endElement: segment', function (el) {
-		self.segNestedDepth--;
-		console.log("... pop-seg: " + self.segNestedPath.pop());
+		self.prevCnt = self.segNestedPath.pop();
+		console.log("... pop-seg: " + self.prevCnt);
+		self.prevDep = self.segNestedDepth--;
 	});
 	this.xmlStream.on('endElement: branch', function (el) {
-		self.segNestedDepth--;
+		self.prevCnt = 0;
+		self.prevDep = self.segNestedDepth--;
 		console.log("... pop-br: " + self.segNestedPath.pop());
 	});
 	this.xmlStream.on('end', function () {
