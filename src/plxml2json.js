@@ -10,32 +10,67 @@ function PlineXformer(filename, options) {
 
 	//Transformer & a few state variables
 	this.xform = new stream.Transform(options);
-	this.segCntInBranch = 0;
-	this.segNesting = [];
-	this.lBranchName = '';
+	this.segNestedDepth = 0;
+	this.segNestedPath = [];
+	this.currBrName = '';
+	this.graph = {};
+	this.plName = '';
+	this.brFirst = true;
+
+	//Actual transformer
 	this.xform._transform = function (data, encoding, done) {
 		//console.log("... transform called");
-		console.log("...segNesting depth: " + self.segNesting.length);
-		var opObj = {
-			'path': self.lBranchName + "." + self.segNesting.join('.') + self.segCntInBranch
-		};
-		this.push(opObj);
 	};
 	this.ipStream = fs.createReadStream(filename);
 	this.xmlStream = new XmlStream(this.ipStream);
+
 	//Read the required nodes & input to transform stream
+	this.xmlStream.on('startElement: pipeline', function (el) {
+		self.graph.group = el.$.group;
+		self.graph.type = el.$.type;
+	});
+
 	this.xmlStream.on('startElement: branch', function (el) {
-		self.lBranchName = el.$.basename;
+		if (self.brFirst) {
+			self.plName = el.$.basename;
+			self.brFirst = false;
+		}
+		self.currBrName = el.$.basename;
+		self.segNestedDepth++;
+		console.log("+++ CMP: " + self.segNestedDepth + "," + self.segNestedPath.join('$'));
+		if (self.segNestedDepth != self.segNestedPath.length) {
+			self.segNestedPath.push(self.currBrName);
+		} else {
+			console.log("... Popping branch: " + self.segNestedPath.pop());
+			self.segNestedPath.push(self.currBrName);
+		}
+		console.log("----> Branch: " + self.currBrName);
 	});
 	this.xmlStream.on('startElement: segment', function (el) {
-		self.xform.write(JSON.stringify(el));
-		self.segCntInBranch++;
+		//self.xform.write(JSON.stringify(el));
+		self.segNestedDepth++;
+		console.log("+++ CMP: " + self.segNestedDepth + "," + self.segNestedPath.join('$'));
+		if (self.segNestedDepth != self.segNestedPath.length) {
+			self.segNestedPath.push(1);
+		} else {
+			var oldval = self.segNestedPath.pop();
+			self.segNestedPath.push(++oldval);
+		}
+		console.log("Seg: " + self.segNestedPath.join('.'));
 	});
 	this.xmlStream.on('endElement: segment', function (el) {
-		self.segCntInBranch--;
+		self.segNestedDepth--;
+		console.log("... pop-seg: " + self.segNestedPath.pop());
+	});
+	this.xmlStream.on('endElement: branch', function (el) {
+		self.segNestedDepth--;
+		console.log("... pop-br: " + self.segNestedPath.pop());
 	});
 	this.xmlStream.on('end', function () {
-		console.log("...segment count: " + self.segCntInBranch);
+		console.log("segment count: " + self.segNestedDepth);
+		console.log("segNestedPath len: " + self.segNestedPath.length);
+		console.log("JSON Graph:");
+		console.log(JSON.stringify(self.graph));
 	});
 }
 module.exports = function (options) {
@@ -47,5 +82,5 @@ module.exports = function (options) {
 var ipFile = process.argv[2];
 //var ipFile = 'test/pl_xml/unit/OnRequest_1sub_1start_1end.xml';
 var plXform = new PlineXformer(ipFile);
-var opStream = fs.createWriteStream('./output.dot');
-plXform.xform.pipe(opStream);
+//var opStream = fs.createWriteStream('./output.dot');
+//plXform.xform.pipe(opStream);
