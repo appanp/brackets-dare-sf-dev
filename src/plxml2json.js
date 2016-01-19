@@ -17,6 +17,7 @@ function PlineXformer(filename, options) {
 	this.graph.nodes = [];
 	this.plName = '';
 	this.brFirst = true;
+	this.simTrans = false; //Flag for having seen a simple-transition
 	this.prevDep = 0;
 
 	//Actual transformer
@@ -41,10 +42,10 @@ function PlineXformer(filename, options) {
 		self.segNestedDepth++;
 		self.prevCnt = 0;
 		self.segNestedPath.push(self.currBrName);
+		self.lastNode = 'branch';
 		console.log("Brh: " + self.segNestedPath.join('.'));
 	});
 	this.xmlStream.on('startElement: segment', function (el) {
-		//self.xform.write(JSON.stringify(el));
 		if (self.segNestedDepth == (self.prevDep + 1)) {
 			self.segNestedPath.push(1);
 		} else {
@@ -52,11 +53,29 @@ function PlineXformer(filename, options) {
 			self.segNestedPath.push(self.prevCnt + 1);
 		}
 		self.segNestedDepth++;
+		self.lastNode = 'segment';
 		console.log("Seg: " + self.segNestedPath.join('.'));
 	});
 	this.xmlStream.on('endElement: node', function (item) {
 		var opObj = {};
 		console.log("... Node found");
+		if (self.lastNode == 'segment') {
+			opObj.id = self.segNestedPath.join('.');
+			self.nodeCnt = 0;
+		} else {
+			self.nodeCnt++;
+			opObj.id = self.segNestedPath.join('.') + '.' + self.nodeCnt;
+		}
+		if (self.simTrans) {
+			self.simTrans = false;
+			var lNode = self.graph.nodes.pop();
+			if (lNode.og_links) {
+				lNode.og_links.push(opObj.id);
+			} else {
+				lNode.op_links = [];
+				lNode.og_links.push(opObj.id);
+			}
+		}
 		if (item.hasOwnProperty('start-node')) {
 			opObj.type = 'start-node';
 			opObj.name = item['start-node'].$.name;
@@ -80,6 +99,7 @@ function PlineXformer(filename, options) {
 			opObj.type = 'text-node';
 		}
 		self.graph.nodes.push(opObj);
+		self.lastNode = 'node';
 	});
 	this.xmlStream.on('endElement: segment', function (el) {
 		self.prevCnt = self.segNestedPath.pop();
@@ -89,6 +109,9 @@ function PlineXformer(filename, options) {
 		self.prevCnt = 0;
 		self.prevDep = self.segNestedDepth--;
 		self.segNestedPath.pop();
+	});
+	this.xmlStream.on('endElement: simple-transition', function (el) {
+		self.simTrans = true;
 	});
 	this.xmlStream.on('end', function () {
 		console.log("... Counters: " + self.segNestedDepth + ", " + self.segNestedPath.length);
