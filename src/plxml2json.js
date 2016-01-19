@@ -14,6 +14,7 @@ function PlineXformer(filename, options) {
 	this.segNestedPath = [];
 	this.currBrName = '';
 	this.graph = {};
+	this.graph.nodes = [];
 	this.plName = '';
 	this.brFirst = true;
 	this.prevDep = 0;
@@ -52,6 +53,33 @@ function PlineXformer(filename, options) {
 		}
 		self.segNestedDepth++;
 		console.log("Seg: " + self.segNestedPath.join('.'));
+	});
+	this.xmlStream.on('endElement: node', function (item) {
+		var opObj = {};
+		console.log("... Node found");
+		if (item.hasOwnProperty('start-node')) {
+			opObj.type = 'start-node';
+			opObj.name = item['start-node'].$.name;
+		} else if (item.hasOwnProperty('end-node')) {
+			opObj.type = 'end-node';
+		} else if (item.hasOwnProperty('interaction-node')) {
+			opObj.type = 'interaction-node';
+		} else if (item.hasOwnProperty('loop-node')) {
+			opObj.type = 'loop-node';
+		} else if (item.hasOwnProperty('jump-node')) {
+			opObj.type = 'jump-node';
+		} else if (item.hasOwnProperty('pipelet-node')) {
+			opObj.type = 'pipelet-node';
+			opObj.name = item['pipelet-node'].$['pipelet-name'];
+		} else if (item.hasOwnProperty('join-node')) {
+			opObj.type = 'join-node';
+		} else if (item.hasOwnProperty('decision-node')) {
+			opObj.type = 'decision-node';
+			opObj.name = item['decision-node'].$['condition-key'];
+		} else if (item.hasOwnProperty('text-node')) {
+			opObj.type = 'text-node';
+		}
+		self.graph.nodes.push(opObj);
 	});
 	this.xmlStream.on('endElement: segment', function (el) {
 		self.prevCnt = self.segNestedPath.pop();
