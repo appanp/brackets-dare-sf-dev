@@ -1,3 +1,5 @@
+/*jslint browser: false */
+/*global require, process, console, module*/
 var fs = require('fs'),
 	stream = require('stream'),
 	XmlStream = require('xml-stream');
@@ -22,9 +24,10 @@ function PlineXformer(filename, options) {
 
 	//Helper functions
 	this.AddNode = function (el) {
-		var opObj = {};
+		var opObj = {},
+			lNode;
 		opObj.type = el.$name;
-		if (self.lastNode == 'segment') {
+		if (self.lastNode === 'segment') {
 			opObj.id = self.segNestedPath.join('.');
 			self.nodeCnt = 0;
 		} else {
@@ -34,7 +37,7 @@ function PlineXformer(filename, options) {
 		//Handle edge for previous simple transition
 		if (self.simTrans) {
 			self.simTrans = false;
-			var lNode = self.graph.nodes.pop();
+			lNode = self.graph.nodes.pop();
 			if (lNode.og_links) {
 				lNode.og_links.push(opObj.id);
 			} else {
