@@ -20,6 +20,41 @@ function PlineXformer(filename, options) {
 	this.simTrans = false; //Flag for having seen a simple-transition
 	this.prevDep = 0;
 
+	//Helper functions
+	this.AddNode = function (el) {
+		var opObj = {};
+		opObj.type = el.$name;
+		if (self.lastNode == 'segment') {
+			opObj.id = self.segNestedPath.join('.');
+			self.nodeCnt = 0;
+		} else {
+			self.nodeCnt += 1;
+			opObj.id = self.segNestedPath.join('.') + '.' + self.nodeCnt;
+		}
+		//Handle edge for previous simple transition
+		if (self.simTrans) {
+			self.simTrans = false;
+			var lNode = self.graph.nodes.pop();
+			if (lNode.og_links) {
+				lNode.og_links.push(opObj.id);
+			} else {
+				lNode.og_links = [];
+				lNode.og_links.push(opObj.id);
+			}
+			self.graph.nodes.push(lNode);
+		}
+		//Name is optional depending on node-type
+		if (opObj.type === 'decision-node') {
+			opObj.name = el.$['condition-key'];
+		} else if (opObj.type === 'pipelet-node') {
+			opObj.name = el.$['pipelet-name'];
+		} else if (el.$ && el.$.name) {
+			opObj.name = el.$.name;
+		}
+		console.log("..." + opObj.type + ": " + opObj.id);
+		self.graph.nodes.push(opObj);
+	};
+
 	//Actual transformer
 	this.xform._transform = function (data, encoding, done) {
 		//console.log("... transform called");
@@ -39,66 +74,55 @@ function PlineXformer(filename, options) {
 			self.brFirst = false;
 		}
 		self.currBrName = el.$.basename;
-		self.segNestedDepth++;
+		self.segNestedDepth += 1;
 		self.prevCnt = 0;
 		self.segNestedPath.push(self.currBrName);
 		self.lastNode = 'branch';
 		console.log("Brh: " + self.segNestedPath.join('.'));
 	});
 	this.xmlStream.on('startElement: segment', function (el) {
-		if (self.segNestedDepth == (self.prevDep + 1)) {
+		if (self.segNestedDepth === (self.prevDep + 1)) {
 			self.segNestedPath.push(1);
 		} else {
 			//var oldval = self.segNestedPath.pop();
 			self.segNestedPath.push(self.prevCnt + 1);
 		}
-		self.segNestedDepth++;
+		self.segNestedDepth += 1;
 		self.lastNode = 'segment';
 		console.log("Seg: " + self.segNestedPath.join('.'));
 	});
-	this.xmlStream.on('endElement: node', function (item) {
-		var opObj = {};
+	//Handle each node type in a separate handler
+	this.xmlStream.on('updateElement: decision-node', function (el) {
+		self.AddNode(el);
+	});
+	this.xmlStream.on('updateElement: start-node', function (el) {
+		self.AddNode(el);
+	});
+	this.xmlStream.on('updateElement: end-node', function (el) {
+		self.AddNode(el);
+	});
+	this.xmlStream.on('updateElement: interaction-node', function (el) {
+		self.AddNode(el);
+	});
+	this.xmlStream.on('updateElement: loop-node', function (el) {
+		self.AddNode(el);
+	});
+	this.xmlStream.on('updateElement: jump-node', function (el) {
+		self.AddNode(el);
+	});
+	this.xmlStream.on('updateElement: join-node', function (el) {
+		self.AddNode(el);
+	});
+	this.xmlStream.on('updateElement: pipelet-node', function (el) {
+		self.AddNode(el);
+	});
+	this.xmlStream.on('updateElement: text-node', function (el) {
+		self.AddNode(el);
+	});
+	this.xmlStream.on('startElement: node', function (item) {
 		console.log("... Node found");
-		if (self.lastNode == 'segment') {
-			opObj.id = self.segNestedPath.join('.');
-			self.nodeCnt = 0;
-		} else {
-			self.nodeCnt++;
-			opObj.id = self.segNestedPath.join('.') + '.' + self.nodeCnt;
-		}
-		if (self.simTrans) {
-			self.simTrans = false;
-			var lNode = self.graph.nodes.pop();
-			if (lNode.og_links) {
-				lNode.og_links.push(opObj.id);
-			} else {
-				lNode.op_links = [];
-				lNode.og_links.push(opObj.id);
-			}
-		}
-		if (item.hasOwnProperty('start-node')) {
-			opObj.type = 'start-node';
-			opObj.name = item['start-node'].$.name;
-		} else if (item.hasOwnProperty('end-node')) {
-			opObj.type = 'end-node';
-		} else if (item.hasOwnProperty('interaction-node')) {
-			opObj.type = 'interaction-node';
-		} else if (item.hasOwnProperty('loop-node')) {
-			opObj.type = 'loop-node';
-		} else if (item.hasOwnProperty('jump-node')) {
-			opObj.type = 'jump-node';
-		} else if (item.hasOwnProperty('pipelet-node')) {
-			opObj.type = 'pipelet-node';
-			opObj.name = item['pipelet-node'].$['pipelet-name'];
-		} else if (item.hasOwnProperty('join-node')) {
-			opObj.type = 'join-node';
-		} else if (item.hasOwnProperty('decision-node')) {
-			opObj.type = 'decision-node';
-			opObj.name = item['decision-node'].$['condition-key'];
-		} else if (item.hasOwnProperty('text-node')) {
-			opObj.type = 'text-node';
-		}
-		self.graph.nodes.push(opObj);
+	});
+	this.xmlStream.on('endElement: node', function (el) {
 		self.lastNode = 'node';
 	});
 	this.xmlStream.on('endElement: segment', function (el) {
@@ -116,7 +140,7 @@ function PlineXformer(filename, options) {
 	this.xmlStream.on('end', function () {
 		console.log("... Counters: " + self.segNestedDepth + ", " + self.segNestedPath.length);
 		console.log("JSON Graph:");
-		console.log(JSON.stringify(self.graph));
+		console.log(JSON.stringify(self.graph, null, 2));
 	});
 }
 module.exports = function (options) {
