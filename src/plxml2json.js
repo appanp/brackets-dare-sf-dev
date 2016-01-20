@@ -37,6 +37,8 @@ function PlineXformer(filename, options) {
 			self.nodeCnt += 1;
 			opObj.id = self.segNestedPath.join('.') + '.' + self.nodeCnt;
 		}
+		opObj.id = self.segNestedPath.join('.');
+
 		//Handle edge for previous (simple)transition
 		if (self.simTrans) {
 			self.simTrans = false;
@@ -86,7 +88,7 @@ function PlineXformer(filename, options) {
 		}
 		self.currBrName = el.$.basename;
 		self.segNestedDepth += 1;
-		self.prevCnt = 0;
+		self.prevSCnt = 0;
 		self.segNestedPath.push(self.currBrName);
 		self.lastNode = 'branch';
 		console.log("Brh: " + self.segNestedPath.join('.'));
@@ -96,9 +98,10 @@ function PlineXformer(filename, options) {
 			self.segNestedPath.push(1);
 		} else {
 			//var oldval = self.segNestedPath.pop();
-			self.segNestedPath.push(self.prevCnt + 1);
+			self.segNestedPath.push(self.prevSCnt + 1);
 		}
 		self.segNestedDepth += 1;
+		self.prevNCnt = 0;
 		self.lastNode = 'segment';
 		console.log("Seg: " + self.segNestedPath.join('.'));
 	});
@@ -135,18 +138,29 @@ function PlineXformer(filename, options) {
 	});
 	this.xmlStream.on('startElement: node', function (item) {
 		console.log("... Node found");
+		if (self.segNestedDepth === (self.prevDep + 1)) {
+			self.segNestedPath.push(1);
+		} else {
+			//var oldval = self.segNestedPath.pop();
+			self.segNestedPath.push(self.prevNCnt + 1);
+		}
+		self.segNestedDepth += 1;
 	});
 	this.xmlStream.on('endElement: node', function (el) {
 		self.lastNode = 'node';
 		self.lastNodeId = self.nodeIds.pop();
-	});
-	this.xmlStream.on('endElement: segment', function (el) {
-		self.prevCnt = self.segNestedPath.pop();
+		self.prevNCnt = self.segNestedPath.pop();
 		self.prevDep = self.segNestedDepth;
 		self.segNestedDepth -= 1;
 	});
+	this.xmlStream.on('endElement: segment', function (el) {
+		self.prevSCnt = self.segNestedPath.pop();
+		self.prevDep = self.segNestedDepth;
+		self.segNestedDepth -= 1;
+		self.prevNCnt = 0;
+	});
 	this.xmlStream.on('endElement: branch', function (el) {
-		self.prevCnt = 0;
+		self.prevSCnt = 0;
 		self.prevDep = self.segNestedDepth;
 		self.segNestedDepth -= 1;
 		self.segNestedPath.pop();

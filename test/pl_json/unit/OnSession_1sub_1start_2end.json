@@ -1,41 +1,41 @@
 {
-  "nodes": [
-    {
-      "type": "text-node",
-      "id": "_ANONYMOUS_BRANCH_1.1"
+	"nodes": [
+		{
+			"type": "text-node",
+			"id": "_ANONYMOUS_BRANCH_1.1.1"
     },
-    {
-      "type": "start-node",
-      "id": "Do.1",
-      "name": "Do",
-      "og_links": [
-        "Do.1.1"
-      ]
-    },
-    {
-      "type": "pipelet-node",
-      "id": "Do.1.1",
-      "name": "Script(bc_api)",
-      "og_links": [
-        "Do.1.1"
-      ]
-    },
-    {
-      "type": "end-node",
-      "id": "Do.1.b2.1"
-    },
-    {
-      "type": "pipelet-node",
-      "id": "Do.1.1",
-      "name": "Assign(bc_api)",
-      "og_links": [
+		{
+			"type": "start-node",
+			"id": "Do.1.1",
+			"name": "Do",
+			"og_links": [
         "Do.1.2"
       ]
     },
-    {
-      "type": "end-node",
-      "id": "Do.1.2"
+		{
+			"type": "pipelet-node",
+			"id": "Do.1.2",
+			"name": "Script(bc_api)",
+			"og_links": [
+        "Do.1.3"
+      ]
+    },
+		{
+			"type": "end-node",
+			"id": "Do.1.2.b2.1.1"
+    },
+		{
+			"type": "pipelet-node",
+			"id": "Do.1.3",
+			"name": "Assign(bc_api)",
+			"og_links": [
+        "Do.1.4"
+      ]
+    },
+		{
+			"type": "end-node",
+			"id": "Do.1.4"
     }
   ],
-  "group": "Application"
+	"group": "Application"
 }
