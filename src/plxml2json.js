@@ -1,5 +1,5 @@
-/*jslint browser: false */
-/*global require, process, console, module*/
+/*jslint node: true */
+"use strict";
 var fs = require('fs'),
 	stream = require('stream'),
 	XmlStream = require('xml-stream');
@@ -130,11 +130,13 @@ function PlineXformer(filename, options) {
 	});
 	this.xmlStream.on('endElement: segment', function (el) {
 		self.prevCnt = self.segNestedPath.pop();
-		self.prevDep = self.segNestedDepth--;
+		self.prevDep = self.segNestedDepth;
+		self.segNestedDepth -= 1;
 	});
 	this.xmlStream.on('endElement: branch', function (el) {
 		self.prevCnt = 0;
-		self.prevDep = self.segNestedDepth--;
+		self.prevDep = self.segNestedDepth;
+		self.segNestedDepth -= 1;
 		self.segNestedPath.pop();
 	});
 	this.xmlStream.on('endElement: simple-transition', function (el) {
