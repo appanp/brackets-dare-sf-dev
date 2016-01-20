@@ -1,0 +1,46 @@
+{
+  "nodes": [
+    {
+      "type": "start-node",
+      "id": "PlaceOrder.1",
+      "name": "PlaceOrder",
+      "og_links": [
+        "PlaceOrder.1.1"
+      ]
+    },
+    {
+      "type": "pipelet-node",
+      "id": "PlaceOrder.1.1",
+      "name": "PlaceOrder(bc_api)",
+      "og_links": [
+        "PlaceOrder.1.2"
+      ]
+    },
+    {
+      "type": "pipelet-node",
+      "id": "PlaceOrder.1.2",
+      "name": "Script(bc_api)",
+      "og_links": [
+        "PlaceOrder.1.2"
+      ]
+    },
+    {
+      "type": "join-node",
+      "id": "PlaceOrder.1.b3.1",
+      "og_links": [
+        "PlaceOrder.1.b3.1.1"
+      ]
+    },
+    {
+      "type": "end-node",
+      "id": "PlaceOrder.1.b3.1.1",
+      "name": "error"
+    },
+    {
+      "type": "end-node",
+      "id": "PlaceOrder.1.2"
+    }
+  ],
+  "group": "Checkout",
+  "type": "view"
+}

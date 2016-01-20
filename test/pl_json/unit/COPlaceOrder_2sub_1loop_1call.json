@@ -1,0 +1,81 @@
+{
+  "nodes": [
+    {
+      "type": "text-node",
+      "id": "_ANONYMOUS_BRANCH_1.1"
+    },
+    {
+      "type": "text-node",
+      "id": "_ANONYMOUS_BRANCH_2.1"
+    },
+    {
+      "type": "start-node",
+      "id": "CreateGiftCertificates.1",
+      "name": "CreateGiftCertificates"
+    },
+    {
+      "type": "loop-node",
+      "id": "CreateGiftCertificates.2",
+      "og_links": [
+        "CreateGiftCertificates.2.3"
+      ]
+    },
+    {
+      "type": "pipelet-node",
+      "id": "CreateGiftCertificates.2.b2.1",
+      "name": "CreateGiftCertificate(bc_api)",
+      "og_links": [
+        "CreateGiftCertificates.2.b2.1.1"
+      ]
+    },
+    {
+      "type": "end-node",
+      "id": "CreateGiftCertificates.2.b2.1.b2.1",
+      "name": "error"
+    },
+    {
+      "type": "pipelet-node",
+      "id": "CreateGiftCertificates.2.b2.1.1",
+      "name": "Assign(bc_api)",
+      "og_links": [
+        "CreateGiftCertificates.2.b2.1.2"
+      ]
+    },
+    {
+      "type": "call-node",
+      "id": "CreateGiftCertificates.2.b2.1.2",
+      "name": "Mail-SecureSend"
+    },
+    {
+      "type": "end-node",
+      "id": "CreateGiftCertificates.2.3"
+    },
+    {
+      "type": "start-node",
+      "id": "ProcessPersonalInformation.1",
+      "name": "ProcessPersonalInformation",
+      "og_links": [
+        "ProcessPersonalInformation.1.1"
+      ]
+    },
+    {
+      "type": "call-node",
+      "id": "ProcessPersonalInformation.1.1",
+      "name": "COBilling-SaveCreditCard",
+      "og_links": [
+        "ProcessPersonalInformation.1.1"
+      ]
+    },
+    {
+      "type": "end-node",
+      "id": "ProcessPersonalInformation.1.b2.1",
+      "name": "error"
+    },
+    {
+      "type": "end-node",
+      "id": "ProcessPersonalInformation.1.1"
+    }
+  ],
+  "group": "Checkout",
+  "type": "view"
+}

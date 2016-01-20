@@ -1,0 +1,41 @@
+{
+  "nodes": [
+    {
+      "type": "text-node",
+      "id": "_ANONYMOUS_BRANCH_1.1"
+    },
+    {
+      "type": "start-node",
+      "id": "Do.1",
+      "name": "Do",
+      "og_links": [
+        "Do.1.1"
+      ]
+    },
+    {
+      "type": "pipelet-node",
+      "id": "Do.1.1",
+      "name": "Script(bc_api)",
+      "og_links": [
+        "Do.1.1"
+      ]
+    },
+    {
+      "type": "end-node",
+      "id": "Do.1.b2.1"
+    },
+    {
+      "type": "pipelet-node",
+      "id": "Do.1.1",
+      "name": "Assign(bc_api)",
+      "og_links": [
+        "Do.1.2"
+      ]
+    },
+    {
+      "type": "end-node",
+      "id": "Do.1.2"
+    }
+  ],
+  "group": "Application"
+}

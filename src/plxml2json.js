@@ -17,6 +17,8 @@ function PlineXformer(filename, options) {
 	this.currBrName = '';
 	this.graph = {};
 	this.graph.nodes = [];
+	this.nodeIds = []; //Used to track nodes created in stack
+	this.lastNodeId = 0; //last popped nodeId from nodeIds
 	this.plName = '';
 	this.brFirst = true;
 	this.simTrans = false; //Flag for having seen a simple-transition
@@ -25,7 +27,8 @@ function PlineXformer(filename, options) {
 	//Helper functions
 	this.AddNode = function (el) {
 		var opObj = {},
-			lNode;
+			lNode,
+			tempTxt;
 		opObj.type = el.$name;
 		if (self.lastNode === 'segment') {
 			opObj.id = self.segNestedPath.join('.');
@@ -34,23 +37,28 @@ function PlineXformer(filename, options) {
 			self.nodeCnt += 1;
 			opObj.id = self.segNestedPath.join('.') + '.' + self.nodeCnt;
 		}
-		//Handle edge for previous simple transition
+		//Handle edge for previous (simple)transition
 		if (self.simTrans) {
 			self.simTrans = false;
-			lNode = self.graph.nodes.pop();
+			lNode = self.graph.nodes[self.lastNodeId];
 			if (lNode.og_links) {
 				lNode.og_links.push(opObj.id);
 			} else {
 				lNode.og_links = [];
 				lNode.og_links.push(opObj.id);
 			}
-			self.graph.nodes.push(lNode);
 		}
+		//Push graph.nodes curr id into nodeIds
+		self.nodeIds.push(self.graph.nodes.length);
 		//Name is optional depending on node-type
 		if (opObj.type === 'decision-node') {
 			opObj.name = el.$['condition-key'];
+		} else if (opObj.type === 'call-node') {
+			opObj.name = el.$['start-name-ref'];
 		} else if (opObj.type === 'pipelet-node') {
-			opObj.name = el.$['pipelet-name'];
+			tempTxt = el.$['pipelet-set-identifier'];
+			opObj.name = el.$['pipelet-name'] + '(' + tempTxt + ')';
+			//TODO: Add configs field for config-property tags
 		} else if (el.$ && el.$.name) {
 			opObj.name = el.$.name;
 		}
@@ -113,6 +121,9 @@ function PlineXformer(filename, options) {
 	this.xmlStream.on('updateElement: jump-node', function (el) {
 		self.AddNode(el);
 	});
+	this.xmlStream.on('updateElement: call-node', function (el) {
+		self.AddNode(el);
+	});
 	this.xmlStream.on('updateElement: join-node', function (el) {
 		self.AddNode(el);
 	});
@@ -127,6 +138,7 @@ function PlineXformer(filename, options) {
 	});
 	this.xmlStream.on('endElement: node', function (el) {
 		self.lastNode = 'node';
+		self.lastNodeId = self.nodeIds.pop();
 	});
 	this.xmlStream.on('endElement: segment', function (el) {
 		self.prevCnt = self.segNestedPath.pop();
@@ -143,7 +155,7 @@ function PlineXformer(filename, options) {
 		self.simTrans = true;
 	});
 	this.xmlStream.on('end', function () {
-		console.log("... Counters: " + self.segNestedDepth + ", " + self.segNestedPath.length);
+		console.log("... Counters: " + self.segNestedDepth + ", " + self.segNestedPath.length) + "," + self.nodeIds.length;
 		console.log("JSON Graph:");
 		console.log(JSON.stringify(self.graph, null, 2));
 	});
