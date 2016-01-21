@@ -31,7 +31,10 @@
   },
   "version": "0.1.0",
   "dependencies": {
+    "JSONStream": "^1.0.7",
     "graphviz": "0.0.8",
+    "json-stream": "^1.0.0",
+    "util": "^0.10.3",
     "xml-stream": "^0.4.5"
   }
 }
