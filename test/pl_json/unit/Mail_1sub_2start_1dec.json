@@ -1,47 +1,60 @@
 {
-	"nodes": [
-		{
-			"type": "text-node",
-			"id": "_ANONYMOUS_BRANCH_1.1.1"
+  "nodes": [
+    {
+      "type": "text-node",
+      "id": "_ANONYMOUS_BRANCH_1.1/1"
     },
-		{
-			"type": "start-node",
-			"id": "Send.1.1",
-			"name": "Send"
-    },
-		{
-			"type": "join-node",
-			"id": "Send.2.1",
-			"og_links": [
-        "Send.2.2"
+    {
+      "type": "start-node",
+      "id": "Send.1/1",
+      "name": "Send",
+      "og_links": [
+        "Send.2/1"
       ]
     },
-		{
-			"type": "decision-node",
-			"id": "Send.2.2",
-			"name": "!empty(MailFrom) && !empty(MailSubject) && !empty(MailTemplate) && !empty(MailTo)"
-    },
-		{
-			"type": "pipelet-node",
-			"id": "Send.2.2.b2.1.1",
-			"name": "SendMail(bc_api)"
-    },
-		{
-			"type": "join-node",
-			"id": "Send.3.1",
-			"og_links": [
-        "Send.3.2"
+    {
+      "type": "join-node",
+      "id": "Send.2/1",
+      "og_links": [
+        "Send.2/2"
       ]
     },
-		{
-			"type": "end-node",
-			"id": "Send.3.2"
+    {
+      "type": "decision-node",
+      "id": "Send.2/2",
+      "name": "!empty(MailFrom) && !empty(MailSubject) && !empty(MailTemplate) && !empty(MailTo)",
+      "og_links": [
+        "Send.2/b2.1/1",
+        "Send.3/1"
+      ]
     },
-		{
-			"type": "start-node",
-			"id": "SecureSend.1.1",
-			"name": "SecureSend"
+    {
+      "type": "pipelet-node",
+      "id": "Send.2/b2.1/1",
+      "name": "SendMail(bc_api)",
+      "og_links": [
+        "Send.3/1"
+      ]
+    },
+    {
+      "type": "join-node",
+      "id": "Send.3/1",
+      "og_links": [
+        "Send.3/2"
+      ]
+    },
+    {
+      "type": "end-node",
+      "id": "Send.3/2"
+    },
+    {
+      "type": "start-node",
+      "id": "SecureSend.1/1",
+      "name": "SecureSend",
+      "og_links": [
+        "Send.2/1"
+      ]
     }
   ],
-	"type": "view"
+  "type": "view"
 }

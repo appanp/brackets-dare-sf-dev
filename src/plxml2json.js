@@ -1,48 +1,57 @@
 /*jslint node: true */
 "use strict";
 var fs = require('fs'),
-	stream = require('stream'),
+	path = require('path'),
 	XmlStream = require('xml-stream');
 
 function PlineXformer(filename, options) {
 	options = options || {};
 	//Expects objects in & objects out
 	options.objectMode = true;
-	var self = this;
+	var self = this,
+		tempTxt;
 
 	//Transformer & a few state variables
-	this.xform = new stream.Transform(options);
 	this.segNestedDepth = 0;
-	this.segNestedPath = [];
+	this.segNestedPath = []; //stack of <branch>.<seg Id>
+	this.nodeIdsStck = []; //For keeping track of IDs to identify nodes
 	this.currBrName = '';
 	this.graph = {};
 	this.graph.nodes = [];
-	this.nodeIds = []; //Used to track nodes created in stack
+	//Used to track node index in graph.nodes
+	this.nodeIds = []; //Required for creating simple & inter transition
 	this.lastNodeId = 0; //last popped nodeId from nodeIds
 	this.plName = '';
 	this.brFirst = true;
 	this.simTrans = false; //Flag for having seen a simple-transition
-	this.prevDep = 0;
+	this.prevSegDep = 0;
 
-	//Helper functions
+	//Just to test uniqueness of generated IDs
+	this.genNodeIds = {};
+
+	//BEGIN: Helper functions
 	this.AddNode = function (el) {
 		var opObj = {},
 			lNode,
 			tempTxt;
 		opObj.type = el.$name;
-		if (self.lastNode === 'segment') {
-			opObj.id = self.segNestedPath.join('.');
-			self.nodeCnt = 0;
-		} else {
-			self.nodeCnt += 1;
-			opObj.id = self.segNestedPath.join('.') + '.' + self.nodeCnt;
-		}
-		opObj.id = self.segNestedPath.join('.');
+		opObj.id = self.segNestedPath.join('/') + '/' + self.nodeIdsStck[self.nodeIdsStck.length - 1];
 
-		//Handle edge for previous (simple)transition
+		//Handle edge for previous simple-transition
 		if (self.simTrans) {
 			self.simTrans = false;
 			lNode = self.graph.nodes[self.lastNodeId];
+			if (lNode.og_links) {
+				lNode.og_links.push(opObj.id);
+			} else {
+				lNode.og_links = [];
+				lNode.og_links.push(opObj.id);
+			}
+		}
+		//Create edge for previous intra-segment transition
+		if (self.segTrans) {
+			self.segTrans = false;
+			lNode = self.graph.nodes[self.graph.nodes.length - 1];
 			if (lNode.og_links) {
 				lNode.og_links.push(opObj.id);
 			} else {
@@ -65,17 +74,69 @@ function PlineXformer(filename, options) {
 			opObj.name = el.$.name;
 		}
 		console.log("..." + opObj.type + ": " + opObj.id);
-		self.graph.nodes.push(opObj);
+		//Check for uniqueness of ID & then push
+		if (!self.genNodeIds[opObj.id]) {
+			self.genNodeIds[opObj.id] = opObj.type;
+			self.graph.nodes.push(opObj);
+		} else {
+			console.log("**** ObjID already found: " + opObj.id + " of type: " + self.genNodeIds[opObj.id]);
+		}
 	};
 
-	//Actual transformer
-	this.xform._transform = function (data, encoding, done) {
-		//console.log("... transform called");
+	//Function to return the target node ID given current node ID path
+	this.getTargetNId = function (segPath, tPath) {
+		var temp = '',
+			segId = 0,
+			tId = '';
+		console.log("+++++ segPath: " + segPath + ", tPath: " + tPath);
+		if (tPath === "./+1") {
+			segId = parseInt(segPath.substring(segPath.lastIndexOf('.') + 1), 10);
+			tId = segPath.substring(0, segPath.lastIndexOf('.') + 1) + (segId + 1) + "/1";
+		} else if (tPath === "../+1") {
+			temp = segPath.substring(0, segPath.lastIndexOf('/'));
+			segId = parseInt(temp.substring(temp.lastIndexOf('.') + 1), 10);
+			tId = temp.substring(0, temp.lastIndexOf('.') + 1) + (segId + 1) + "/1";
+		} else if (tPath === "..") {
+			temp = segPath.substring(0, segPath.lastIndexOf('/'));
+			tId = temp + "/1";
+		} else if (tPath === "./") {
+			tId = segPath + "/1";
+		} else if (tPath.indexOf("./") === 0) {
+			tId = segPath + tPath.substring(tPath.indexOf('/')) + "/1";
+		} else if (tPath.indexOf('/') === 0) {
+			tId = tPath.substring(1) + "/1";
+		}
+		return tId;
 	};
+
+	// Function returns nodeId of target node from targetPath attribute
+	//This handles inter-segment transitions only.
+	this.addEdge = function (el) {
+		var lNode, tPath, segPath, segId, tId;
+		lNode = self.graph.nodes[self.lastNodeId];
+		if (el.$['target-path']) {
+			tPath = el.$['target-path'];
+			//console.log("... addEdge: " + tPath);
+			segPath = lNode.id.substring(0, lNode.id.lastIndexOf('/'));
+			tId = self.getTargetNId(segPath, tPath);
+			console.log("++++++++ tId returned: " + tId);
+			if (lNode.og_links) {
+				lNode.og_links.push(tId);
+			} else {
+				lNode.og_links = [];
+				lNode.og_links.push(tId);
+			}
+		} else {
+			self.segTrans = true;
+		}
+	};
+	//END: Helper functions
+	tempTxt = path.basename(filename);
+	this.opFileName = path.join('temp', tempTxt.substring(0, tempTxt.lastIndexOf('.')) + ".json");
 	this.ipStream = fs.createReadStream(filename);
 	this.xmlStream = new XmlStream(this.ipStream);
 
-	//Read the required nodes & input to transform stream
+	//Read the required nodes & tranform to JSON object
 	this.xmlStream.on('startElement: pipeline', function (el) {
 		self.graph.group = el.$.group;
 		self.graph.type = el.$.type;
@@ -89,21 +150,18 @@ function PlineXformer(filename, options) {
 		self.currBrName = el.$.basename;
 		self.segNestedDepth += 1;
 		self.prevSCnt = 0;
-		self.segNestedPath.push(self.currBrName);
+		//self.segNestedPath.push(self.currBrName);
 		self.lastNode = 'branch';
-		console.log("Brh: " + self.segNestedPath.join('.'));
+		console.log("Brh: " + self.segNestedPath.join('/') + '/' + self.currBrName);
 	});
 	this.xmlStream.on('startElement: segment', function (el) {
-		if (self.segNestedDepth === (self.prevDep + 1)) {
-			self.segNestedPath.push(1);
-		} else {
-			//var oldval = self.segNestedPath.pop();
-			self.segNestedPath.push(self.prevSCnt + 1);
-		}
 		self.segNestedDepth += 1;
-		self.prevNCnt = 0;
+		console.log("***** segDep, prevDep: " + self.segNestedDepth + "," + self.prevSegDep);
+		self.prevSCnt += 1;
+		self.segNestedPath.push(self.currBrName + "." + self.prevSCnt);
 		self.lastNode = 'segment';
-		console.log("Seg: " + self.segNestedPath.join('.'));
+		self.nodeIdsStck.push(0);
+		console.log("Seg: " + self.segNestedPath.join('/'));
 	});
 	//Handle each node type in a separate handler
 	this.xmlStream.on('updateElement: decision-node', function (el) {
@@ -137,41 +195,45 @@ function PlineXformer(filename, options) {
 		self.AddNode(el);
 	});
 	this.xmlStream.on('startElement: node', function (item) {
-		console.log("... Node found");
-		if (self.segNestedDepth === (self.prevDep + 1)) {
-			self.segNestedPath.push(1);
-		} else {
-			//var oldval = self.segNestedPath.pop();
-			self.segNestedPath.push(self.prevNCnt + 1);
-		}
-		self.segNestedDepth += 1;
+		//console.log("... Node found");
+		console.log("***** segDep, prevDep: " + self.segNestedDepth + "," + self.prevSegDep);
+		self.nodeIdsStck[self.nodeIdsStck.length - 1] += 1;
 	});
 	this.xmlStream.on('endElement: node', function (el) {
 		self.lastNode = 'node';
 		self.lastNodeId = self.nodeIds.pop();
-		self.prevNCnt = self.segNestedPath.pop();
-		self.prevDep = self.segNestedDepth;
-		self.segNestedDepth -= 1;
 	});
 	this.xmlStream.on('endElement: segment', function (el) {
-		self.prevSCnt = self.segNestedPath.pop();
-		self.prevDep = self.segNestedDepth;
+		var temp = '';
+		self.prevSegDep = self.segNestedDepth;
 		self.segNestedDepth -= 1;
-		self.prevNCnt = 0;
+		//self.prevNCnt = 0;
+		temp = self.segNestedPath.pop();
+		self.currBrName = temp.substring(0, temp.lastIndexOf('.'));
+		self.prevSCnt = parseInt(temp.substring(temp.lastIndexOf('.') + 1), 10);
+		self.nodeIdsStck.pop();
 	});
 	this.xmlStream.on('endElement: branch', function (el) {
-		self.prevSCnt = 0;
-		self.prevDep = self.segNestedDepth;
+		if (self.segNestedPath.length > 0) {
+			var temp = self.segNestedPath[self.segNestedPath.length - 1];
+			self.currBrName = temp.substring(0, temp.lastIndexOf('.'));
+		}
+		console.log("*** prevSCnt: " + self.prevSCnt);
+		self.prevSegDep = 0;
 		self.segNestedDepth -= 1;
-		self.segNestedPath.pop();
 	});
 	this.xmlStream.on('endElement: simple-transition', function (el) {
 		self.simTrans = true;
 	});
+	this.xmlStream.on('endElement: transition', function (el) {
+		self.addEdge(el);
+	});
 	this.xmlStream.on('end', function () {
-		console.log("... Counters: " + self.segNestedDepth + ", " + self.segNestedPath.length) + "," + self.nodeIds.length;
-		console.log("JSON Graph:");
-		console.log(JSON.stringify(self.graph, null, 2));
+		console.log("... Counters: " + self.segNestedDepth + ", " + self.segNestedPath.length + ", " + self.nodeIds.length + ", " + self.nodeIdsStck.length);
+		console.log("JSON Graph written to file: ");
+		console.log("... " + self.opFileName);
+		fs.writeFileSync(self.opFileName,
+			JSON.stringify(self.graph, null, 2));
 	});
 }
 module.exports = function (options) {
