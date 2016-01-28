@@ -116,8 +116,7 @@
       "type": "join-node",
       "id": "ShowAvailableStores.3/1",
       "og_links": [
-        "ShowAvailableStores.3/2",
-        "ShowSelectedStoreCore.2/1"
+        "ShowAvailableStores.3/2"
       ]
     },
     {
@@ -125,6 +124,7 @@
       "id": "ShowAvailableStores.3/2",
       "name": "Script(bc_api)",
       "og_links": [
+        "ShowSelectedStoreCore.2/1",
         "ShowSelectedStoreCore.2/1"
       ]
     },

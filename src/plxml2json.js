@@ -25,6 +25,9 @@ function PlineXformer(filename, options) {
 	this.brFirst = true;
 	this.simTrans = false; //Flag for having seen a simple-transition
 	this.prevSegDep = 0;
+	//Flag to indicate if in node element
+	//Required to handle transactional inter-segment transition
+	this.inNode = true;
 
 	//Just to test uniqueness of generated IDs
 	this.genNodeIds = {};
@@ -113,7 +116,10 @@ function PlineXformer(filename, options) {
 	//This handles inter-segment transitions only.
 	this.addEdge = function (el) {
 		var lNode, tPath, segPath, segId, tId;
-		lNode = self.graph.nodes[self.lastNodeId];
+		if (!self.inNode)
+			lNode = self.graph.nodes[self.lastNodeId];
+		else
+			lNode = self.graph.nodes[self.graph.nodes.length - 1];
 		if (el.$['target-path']) {
 			tPath = el.$['target-path'];
 			//console.log("... addEdge: " + tPath);
@@ -197,10 +203,12 @@ function PlineXformer(filename, options) {
 	this.xmlStream.on('startElement: node', function (item) {
 		//console.log("... Node found");
 		console.log("***** segDep, prevDep: " + self.segNestedDepth + "," + self.prevSegDep);
+		self.inNode = true;
 		self.nodeIdsStck[self.nodeIdsStck.length - 1] += 1;
 	});
 	this.xmlStream.on('endElement: node', function (el) {
 		self.lastNode = 'node';
+		self.inNode = false;
 		self.lastNodeId = self.nodeIds.pop();
 	});
 	this.xmlStream.on('endElement: segment', function (el) {
@@ -243,7 +251,6 @@ module.exports = function (options) {
 /* START: Main, Test the transformer */
 //var ipFile = require('path').join(__dirname, process.argv[2]);
 var ipFile = process.argv[2];
-//var ipFile = 'test/pl_xml/unit/OnRequest_1sub_1start_1end.xml';
 var plXform = new PlineXformer(ipFile);
 //var opStream = fs.createWriteStream('./output.dot');
 //plXform.xform.pipe(opStream);
