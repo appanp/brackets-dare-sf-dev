@@ -34,7 +34,7 @@ dotXform._transform = function (data, encoding, done) {
 	op_data += 'node [color=lightblue,style=filled,shape=plaintext,labelloc=b,height=0.3];\n';
 	data.nodes.forEach(function (d, i, a) {
 		temp = type2imgPath[d.type];
-		op_data += d.id + ' [label="' + (d.name || '') + '",image="' + temp + '"];\n';
+		op_data += '"' + d.id + '"' + ' [label="' + (d.name || '') + '",image="' + temp + '"];\n';
 	});
 
 	//Ouput edges
@@ -43,7 +43,7 @@ dotXform._transform = function (data, encoding, done) {
 		temp = d.id;
 		if (d.og_links) {
 			d.og_links.forEach(function (l, j, b) {
-				op_data += temp + "->" + l + "\n";
+				op_data += '"' + temp + '" -> "' + l + '"\n';
 			});
 		}
 	});
